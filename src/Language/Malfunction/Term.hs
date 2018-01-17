@@ -17,7 +17,7 @@ data Pattern = PatVar Id           -- variable
 data Term a = TmVar a Id                        -- variable
             | TmLit a Literal                   -- literal
             | TmApp a (Term a) [Term a]         -- application
-            | TmAbs a Pattern (Term a)          -- lambda-abstraction
+            | TmAbs a [Pattern] (Term a)        -- lambda-abstraction
             | TmLet a Pattern (Term a) (Term a) -- let-in binding
             | TmIf a (Term a) (Term a) (Term a) -- if-then-else
             | TmCase a [(Pattern, Term a)]      -- pattern matching
