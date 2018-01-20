@@ -8,11 +8,13 @@ data Literal = LitInt Int      -- integer
              | LitChar Char    -- character
              | LitStr String   -- string
 
+
 data Pattern = PatVar Id           -- variable
              | PatWild             -- wildcard
              | PatLit Literal      -- literal
              | PatAs Id Pattern    -- as-pattern
              | PatCon Id [Pattern] -- constructor
+
 
 data Term a = TmVar a Id                        -- variable
             | TmLit a Literal                   -- literal
@@ -30,3 +32,11 @@ getInfo (TmAbs i _ _)   = i
 getInfo (TmLet i _ _ _) = i
 getInfo (TmIf i _ _ _)  = i
 getInfo (TmCase i _)    = i
+
+
+data Type = TyVar Id        -- type variable
+          | TyCon Id [Type] -- type constructor
+          | TyArr Type Type -- arrow (function type)
+          | TyGVar Int      -- generalized type variable
+
+newtype TypeScheme = TyScheme Type
