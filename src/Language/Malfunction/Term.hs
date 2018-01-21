@@ -1,5 +1,8 @@
 module Language.Malfunction.Term where
 
+import Control.Monad (when)
+import Data.List (nub, elemIndex)
+
 -- identifier
 type Id = String
 
@@ -34,9 +37,40 @@ getInfo (TmIf i _ _ _)  = i
 getInfo (TmCase i _)    = i
 
 
-data Type = TyVar Id        -- type variable
+type Level = Int
+
+data Type = TyVar Level Id  -- type variable
           | TyCon Id [Type] -- type constructor
           | TyArr Type Type -- arrow (function type)
           | TyGVar Int      -- generalized type variable
 
-newtype TypeScheme = TyScheme Type
+data TypeScheme = TyScheme Int Type
+
+generalize :: Level -> Type -> TypeScheme
+generalize l ty = TyScheme (length gfv) (replace ty)
+  where
+    gFreeVars (TyVar l' v)    = if l' >= l then [v] else []
+    gFreeVars (TyCon _ tys)   = nub $ concatMap gFreeVars tys
+    gFreeVars (TyArr ty1 ty2) = nub $ gFreeVars ty1 ++ gFreeVars ty2
+    gFreeVars (TyGVar _)      = []
+
+    gfv = gFreeVars ty
+
+    replace ty@(TyVar l' v) =
+      case elemIndex v gfv of
+        Just n  -> TyGVar n
+        Nothing -> ty
+    replace (TyCon c tys)   = TyCon c (map replace tys)
+    replace (TyArr ty1 ty2) = TyArr (replace ty1) (replace ty2)
+    replace ty@(TyGVar _)   = ty
+
+instantiate :: Monad m => TypeScheme -> [Type] -> m Type
+instantiate (TyScheme arity gty) args =
+  do
+    when (length args /= arity) $ fail "wrong number of arguments"
+    return $ replace gty
+  where
+    replace ty@(TyVar _ _)  = ty
+    replace (TyCon c tys)   = TyCon c (map replace tys)
+    replace (TyArr ty1 ty2) = TyArr (replace ty1) (replace ty2)
+    replace (TyGVar n)      = args !! n
