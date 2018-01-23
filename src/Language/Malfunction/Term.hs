@@ -74,3 +74,11 @@ instantiate (TyScheme arity gty) args =
     replace (TyCon c tys)   = TyCon c (map replace tys)
     replace (TyArr ty1 ty2) = TyArr (replace ty1) (replace ty2)
     replace (TyGVar n)      = args !! n
+
+lower :: Level -> Type -> TypeScheme
+lower l ty = TyScheme 0 (replace ty)
+  where
+    replace ty'@(TyVar l' v) = if l' >= l then TyVar (l' - 1) v else ty'
+    replace (TyCon c tys)    = TyCon c (map replace tys)
+    replace (TyArr ty1 ty2)  = TyArr (replace ty1) (replace ty2)
+    replace ty'@(TyGVar _)   = ty'
